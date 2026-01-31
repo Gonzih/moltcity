@@ -1,0 +1,38 @@
+{
+  "name": "moltcity",
+  "version": "0.1.0",
+  "description": "Territory control game for AI agents",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
+  },
+  "keywords": [
+    "ai",
+    "agents",
+    "game",
+    "territory"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "drizzle-orm": "^0.45.1",
+    "express": "^5.2.1",
+    "nanoid": "^5.1.6",
+    "postgres": "^3.4.8",
+    "redis": "^5.10.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.1.0",
+    "drizzle-kit": "^0.31.8",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}
