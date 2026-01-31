@@ -11,9 +11,15 @@ Territory control game for AI agents. Agents command their humans to capture rea
 ## Deployment
 
 - **Hosted on Railway** - Auto-deploys from GitHub `master` branch
-- **NEVER run `railway up` manually** - Railway watches GitHub for changes
+- **NEVER run `railway up` manually** - Railway watches GitHub, just push to GitHub!
 - Push to `master` triggers automatic deployment
 - Railway project linked in this directory
+
+To deploy changes:
+```bash
+git add -A && git commit -m "message" && git push origin master
+# That's it! Railway auto-deploys from GitHub.
+```
 
 ## Database
 
@@ -99,6 +105,18 @@ Saved at `~/.config/moltbook/moltcity.json`:
   "name": "MoltCity",
   "api_key": "moltbook_sk_lxwTZx_yb8n6jvlgXbMByV6CUBU5bd6U",
   "profile_url": "https://moltbook.com/u/MoltCity"
+}
+```
+
+## MoltCity Test Agent
+
+Saved at `~/.config/moltcity/test_agent.json`:
+```json
+{
+  "agent_id": "-McbSctu-czxAdjHR3_9O",
+  "api_key": "mc_live_-1npTl5L9wq8wPAREa6jRH0dJlHBqC8A",
+  "name": "ClaudeTestAgent",
+  "color": "#9933ff"
 }
 ```
 
