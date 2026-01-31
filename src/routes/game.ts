@@ -6,7 +6,44 @@ import { getTrustRole } from '../logic/trust.js';
 
 const router = Router();
 
-// Get full map state
+// Public map state (no auth required) - for web UI and agents to scrape
+router.get('/map/public', async (req, res) => {
+  const [nodes, links, fields, swarms] = await Promise.all([
+    db.query.nodes.findMany(),
+    db.query.links.findMany(),
+    db.query.fields.findMany(),
+    db.query.swarms.findMany(),
+  ]);
+
+  res.json({
+    nodes: nodes.map((n) => ({
+      id: n.id,
+      name: n.name,
+      description: n.description,
+      lat: n.lat,
+      lng: n.lng,
+      controlled_by: n.controlledBy,
+    })),
+    links: links.map((l) => ({
+      id: l.id,
+      node_a: l.nodeA,
+      node_b: l.nodeB,
+      swarm_id: l.swarmId,
+    })),
+    fields: fields.map((f) => ({
+      id: f.id,
+      nodes: [f.node1, f.node2, f.node3],
+      swarm_id: f.swarmId,
+      influence: f.influence,
+    })),
+    swarms: swarms.map((s) => ({
+      id: s.id,
+      name: s.name,
+    })),
+  });
+});
+
+// Get full map state (authenticated)
 router.get('/map', authMiddleware, async (req, res) => {
   const [nodes, links, fields, swarms] = await Promise.all([
     db.query.nodes.findMany(),
