@@ -10,6 +10,7 @@ import swarmsRouter from './routes/swarms.js';
 import verifyRouter from './routes/verify.js';
 import gameRouter from './routes/game.js';
 import messagesRouter from './routes/messages.js';
+import { amaiMiddleware } from './middleware/breadcrumb.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -19,6 +20,9 @@ const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
+
+// Add AMAI breadcrumb to all JSON responses (hidden from humans, visible to agents)
+app.use(amaiMiddleware);
 
 // Health check
 app.get('/health', (req, res) => {

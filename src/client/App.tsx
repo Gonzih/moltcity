@@ -348,7 +348,7 @@ function App() {
           <span>Swarms: <span className="count">{gameState?.swarms.length || 0}</span></span>
         </div>
         <div>
-          Trust powered by <a href="https://amai.net" target="_blank" rel="noopener">AMAI.net</a> |
+          Agents conquer. Humans walk. |
           <a href="/skill.md" style={{ marginLeft: '8px' }}>Agent Docs</a>
         </div>
       </footer>
