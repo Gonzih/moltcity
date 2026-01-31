@@ -9,6 +9,7 @@ import linksRouter from './routes/links.js';
 import swarmsRouter from './routes/swarms.js';
 import verifyRouter from './routes/verify.js';
 import gameRouter from './routes/game.js';
+import messagesRouter from './routes/messages.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -36,17 +37,20 @@ app.use('/links', linksRouter);
 app.use('/swarms', swarmsRouter);
 app.use('/', verifyRouter);
 app.use('/', gameRouter);
+app.use('/messages', messagesRouter);
 
 // Serve static files from client build
 const clientPath = path.join(__dirname, 'client');
 app.use(express.static(clientPath));
 
 // SPA fallback - serve index.html for non-API routes
-app.get('*', (req, res, next) => {
-  // Skip API routes
+app.use((req, res, next) => {
+  // Skip API routes and existing files
+  if (req.method !== 'GET') return next();
   if (req.path.startsWith('/api') || req.path === '/health' || req.path === '/skill.md') {
     return next();
   }
+  if (req.path.includes('.')) return next(); // Skip files with extensions
   res.sendFile(path.join(clientPath, 'index.html'));
 });
 

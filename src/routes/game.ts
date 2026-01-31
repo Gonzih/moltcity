@@ -1,19 +1,55 @@
 import { Router } from 'express';
 import { db, schema } from '../db/index.js';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, and, gte, lte } from 'drizzle-orm';
 import { authMiddleware } from '../middleware/auth.js';
 import { getTrustRole } from '../logic/trust.js';
 
 const router = Router();
 
 // Public map state (no auth required) - for web UI and agents to scrape
+// Accepts optional viewport bounds: ?north=X&south=X&east=X&west=X
 router.get('/map/public', async (req, res) => {
-  const [nodes, links, fields, swarms] = await Promise.all([
-    db.query.nodes.findMany(),
+  const { north, south, east, west } = req.query;
+
+  // Parse bounds if provided
+  const hasBounds = north && south && east && west;
+  const bounds = hasBounds ? {
+    north: parseFloat(north as string),
+    south: parseFloat(south as string),
+    east: parseFloat(east as string),
+    west: parseFloat(west as string),
+  } : null;
+
+  // Fetch nodes within bounds or all if no bounds
+  const nodes = bounds
+    ? await db.query.nodes.findMany({
+        where: and(
+          gte(schema.nodes.lat, bounds.south),
+          lte(schema.nodes.lat, bounds.north),
+          gte(schema.nodes.lng, bounds.west),
+          lte(schema.nodes.lng, bounds.east)
+        ),
+      })
+    : await db.query.nodes.findMany();
+
+  const nodeIds = new Set(nodes.map(n => n.id));
+
+  // Fetch links, fields, swarms
+  const [allLinks, allFields, swarms] = await Promise.all([
     db.query.links.findMany(),
     db.query.fields.findMany(),
     db.query.swarms.findMany(),
   ]);
+
+  // Filter links to only those where both nodes are visible
+  const links = bounds
+    ? allLinks.filter(l => nodeIds.has(l.nodeA) && nodeIds.has(l.nodeB))
+    : allLinks;
+
+  // Filter fields to only those where all 3 nodes are visible
+  const fields = bounds
+    ? allFields.filter(f => nodeIds.has(f.node1) && nodeIds.has(f.node2) && nodeIds.has(f.node3))
+    : allFields;
 
   res.json({
     nodes: nodes.map((n) => ({
@@ -39,6 +75,7 @@ router.get('/map/public', async (req, res) => {
     swarms: swarms.map((s) => ({
       id: s.id,
       name: s.name,
+      color: s.color,
     })),
   });
 });
@@ -76,6 +113,7 @@ router.get('/map', authMiddleware, async (req, res) => {
     swarms: swarms.map((s) => ({
       id: s.id,
       name: s.name,
+      color: s.color,
     })),
   });
 });

@@ -188,3 +188,81 @@
   background: rgba(123, 44, 191, 0.3);
   border: 1px solid #7b2cbf;
 }
+
+.legend-dot.user {
+  background: #00ff88;
+  box-shadow: 0 0 8px rgba(0, 255, 136, 0.6);
+}
+
+/* Locate button */
+.locate-btn {
+  background: #00d4ff;
+  color: #000;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+}
+
+.locate-btn:hover {
+  background: #00b8e6;
+}
+
+.locate-btn:disabled {
+  background: #555;
+  color: #999;
+  cursor: not-allowed;
+}
+
+/* Location error */
+.location-error {
+  background: #ff4444;
+  color: #fff;
+  padding: 8px 20px;
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+/* User location marker */
+.user-marker {
+  position: relative;
+}
+
+.user-marker-inner {
+  width: 16px;
+  height: 16px;
+  background: #00ff88;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 10px rgba(0, 255, 136, 0.8);
+}
+
+.user-marker-pulse {
+  width: 40px;
+  height: 40px;
+  background: rgba(0, 255, 136, 0.3);
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: pulse 2s ease-out infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.5);
+    opacity: 0;
+  }
+}

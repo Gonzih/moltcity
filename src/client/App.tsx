@@ -1,5 +1,6 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { MapContainer, TileLayer, CircleMarker, Polyline, Polygon, Popup, useMap, useMapEvents } from 'react-leaflet';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
+import { MapContainer, TileLayer, CircleMarker, Polyline, Polygon, Popup, useMap, useMapEvents, Marker } from 'react-leaflet';
+import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 interface Node {
@@ -28,6 +29,7 @@ interface Field {
 interface Swarm {
   id: string;
   name: string;
+  color: string;
 }
 
 interface GameState {
@@ -37,9 +39,23 @@ interface GameState {
   swarms: Swarm[];
 }
 
+interface UserLocation {
+  lat: number;
+  lng: number;
+  accuracy: number;
+}
+
 const API_BASE = '';
 
-function MapEvents({ onBoundsChange }: { onBoundsChange: (bounds: any) => void }) {
+// Custom icon for user location
+const userIcon = L.divIcon({
+  className: 'user-marker',
+  html: '<div class="user-marker-inner"></div><div class="user-marker-pulse"></div>',
+  iconSize: [20, 20],
+  iconAnchor: [10, 10],
+});
+
+function MapEvents({ onBoundsChange }: { onBoundsChange: (bounds: L.LatLngBounds) => void }) {
   const map = useMapEvents({
     moveend: () => {
       onBoundsChange(map.getBounds());
@@ -48,6 +64,18 @@ function MapEvents({ onBoundsChange }: { onBoundsChange: (bounds: any) => void }
       onBoundsChange(map.getBounds());
     },
   });
+  return null;
+}
+
+function FlyToLocation({ location }: { location: UserLocation | null }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (location) {
+      map.flyTo([location.lat, location.lng], 15, { duration: 1 });
+    }
+  }, [location, map]);
+
   return null;
 }
 
@@ -71,6 +99,10 @@ function Legend() {
         <div className="legend-field"></div>
         <span>Control Field</span>
       </div>
+      <div className="legend-item">
+        <div className="legend-dot user"></div>
+        <span>Your Location</span>
+      </div>
     </div>
   );
 }
@@ -79,10 +111,24 @@ function App() {
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
+  const [locating, setLocating] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [bounds, setBounds] = useState<L.LatLngBounds | null>(null);
 
-  const fetchGameState = useCallback(async () => {
+  const fetchGameState = useCallback(async (viewBounds?: L.LatLngBounds) => {
     try {
-      const res = await fetch(`${API_BASE}/map/public`);
+      let url = `${API_BASE}/map/public`;
+      if (viewBounds) {
+        const params = new URLSearchParams({
+          north: viewBounds.getNorth().toString(),
+          south: viewBounds.getSouth().toString(),
+          east: viewBounds.getEast().toString(),
+          west: viewBounds.getWest().toString(),
+        });
+        url += `?${params}`;
+      }
+      const res = await fetch(url);
       if (!res.ok) throw new Error('Failed to fetch game state');
       const data = await res.json();
       setGameState(data);
@@ -96,10 +142,44 @@ function App() {
   }, []);
 
   useEffect(() => {
-    fetchGameState();
-    const interval = setInterval(fetchGameState, 30000); // Refresh every 30s
+    fetchGameState(bounds || undefined);
+  }, [fetchGameState, bounds]);
+
+  // Refetch periodically
+  useEffect(() => {
+    const interval = setInterval(() => fetchGameState(bounds || undefined), 30000);
     return () => clearInterval(interval);
-  }, [fetchGameState]);
+  }, [fetchGameState, bounds]);
+
+  const handleBoundsChange = useCallback((newBounds: L.LatLngBounds) => {
+    setBounds(newBounds);
+  }, []);
+
+  const locateMe = useCallback(() => {
+    if (!navigator.geolocation) {
+      setLocationError('Geolocation not supported');
+      return;
+    }
+
+    setLocating(true);
+    setLocationError(null);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setUserLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+        });
+        setLocating(false);
+      },
+      (err) => {
+        setLocationError(err.message);
+        setLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }, []);
 
   const getNodeById = (id: string): Node | undefined => {
     return gameState?.nodes.find(n => n.id === id);
@@ -113,13 +193,8 @@ function App() {
 
   const getSwarmColor = (swarmId?: string): string => {
     if (!swarmId) return '#666';
-    // Generate consistent color from swarm ID
-    let hash = 0;
-    for (let i = 0; i < swarmId.length; i++) {
-      hash = swarmId.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    const hue = hash % 360;
-    return `hsl(${hue}, 70%, 50%)`;
+    const swarm = gameState?.swarms.find(s => s.id === swarmId);
+    return swarm?.color || '#666';
   };
 
   return (
@@ -127,10 +202,23 @@ function App() {
       <header className="header">
         <h1>MoltCity</h1>
         <div className="header-links">
-          <a href="/skill.md" className="skill-badge">🤖 Agent Integration: /skill.md</a>
-          <a href="/map/public">Raw JSON API</a>
+          <button
+            className="locate-btn"
+            onClick={locateMe}
+            disabled={locating}
+          >
+            {locating ? '📍 Locating...' : '📍 My Location'}
+          </button>
+          <a href="/skill.md" className="skill-badge">🤖 Agent Integration</a>
+          <a href="/map/public">API</a>
         </div>
       </header>
+
+      {locationError && (
+        <div className="location-error">
+          Location error: {locationError}
+        </div>
+      )}
 
       <div className="map-container">
         {loading && <div className="loading">Loading game state...</div>}
@@ -145,6 +233,26 @@ function App() {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
           />
+
+          <FlyToLocation location={userLocation} />
+
+          {/* User location marker */}
+          {userLocation && (
+            <Marker
+              position={[userLocation.lat, userLocation.lng]}
+              icon={userIcon}
+            >
+              <Popup>
+                <div className="node-popup">
+                  <h3>Your Location</h3>
+                  <p>{userLocation.lat.toFixed(6)}, {userLocation.lng.toFixed(6)}</p>
+                  <p style={{ fontSize: '0.8rem', color: '#888' }}>
+                    Accuracy: ~{Math.round(userLocation.accuracy)}m
+                  </p>
+                </div>
+              </Popup>
+            </Marker>
+          )}
 
           {/* Render fields (triangles) */}
           {gameState?.fields.map(field => {
@@ -224,7 +332,7 @@ function App() {
             </CircleMarker>
           ))}
 
-          <MapEvents onBoundsChange={() => {}} />
+          <MapEvents onBoundsChange={handleBoundsChange} />
         </MapContainer>
 
         <Legend />

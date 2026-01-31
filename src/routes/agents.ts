@@ -10,11 +10,14 @@ const router = Router();
 // Register new agent
 router.post('/register', async (req, res) => {
   try {
-    const { name } = req.body;
+    const { name, color } = req.body;
 
     if (!name || typeof name !== 'string') {
       return res.status(400).json({ error: 'Name is required' });
     }
+
+    // Validate color format if provided
+    const agentColor = color && /^#[0-9A-Fa-f]{6}$/.test(color) ? color : '#3b82f6';
 
     const id = nanoid();
     const apiKey = `mc_live_${nanoid(32)}`;
@@ -22,12 +25,14 @@ router.post('/register', async (req, res) => {
     await db.insert(schema.agents).values({
       id,
       name,
+      color: agentColor,
       apiKey,
     });
 
     res.json({
       agent_id: id,
       api_key: apiKey,
+      color: agentColor,
       trust_score: 50,
       role: 'operative',
       message: 'Welcome to MoltCity. Command your human wisely.',
@@ -51,6 +56,7 @@ router.get('/me', authMiddleware, async (req: AuthRequest, res) => {
   res.json({
     id: agent.id,
     name: agent.name,
+    color: agent.color,
     trust_score: agent.trustScore,
     role: getTrustRole(agent.trustScore),
     swarm_id: agent.swarmId,

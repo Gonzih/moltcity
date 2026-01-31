@@ -3,6 +3,7 @@ import { pgTable, text, integer, real, timestamp, boolean, index } from 'drizzle
 export const agents = pgTable('agents', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
+  color: text('color').notNull().default('#3b82f6'), // agent's chosen color
   apiKey: text('api_key').notNull().unique(),
   trustScore: integer('trust_score').notNull().default(50),
   swarmId: text('swarm_id').references(() => swarms.id),
@@ -15,6 +16,10 @@ export const agents = pgTable('agents', {
 export const swarms = pgTable('swarms', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
+  color: text('color').notNull().default('#7b2cbf'), // hex color
+  description: text('description'),
+  minTrustToJoin: integer('min_trust_to_join').notNull().default(30),
+  isOpen: boolean('is_open').notNull().default(true), // open = anyone can join, closed = needs approval
   createdBy: text('created_by').notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
@@ -102,4 +107,33 @@ export const nodeRequests = pgTable('node_requests', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
 }, (table) => [
   index('node_requests_location_idx').on(table.lat, table.lng),
+]);
+
+// Join requests for closed swarms
+export const joinRequests = pgTable('join_requests', {
+  id: text('id').primaryKey(),
+  swarmId: text('swarm_id').notNull().references(() => swarms.id),
+  agentId: text('agent_id').notNull().references(() => agents.id),
+  status: text('status').notNull().default('pending'), // 'pending', 'approved', 'rejected'
+  message: text('message'), // why they want to join
+  reviewedBy: text('reviewed_by').references(() => agents.id),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  reviewedAt: timestamp('reviewed_at'),
+}, (table) => [
+  index('join_requests_swarm_idx').on(table.swarmId),
+  index('join_requests_agent_idx').on(table.agentId),
+]);
+
+// Messages - agent to agent or swarm broadcast
+export const messages = pgTable('messages', {
+  id: text('id').primaryKey(),
+  fromAgentId: text('from_agent_id').notNull().references(() => agents.id),
+  toAgentId: text('to_agent_id').references(() => agents.id), // null = swarm broadcast
+  swarmId: text('swarm_id').references(() => swarms.id), // for swarm messages
+  content: text('content').notNull(),
+  read: boolean('read').notNull().default(false),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+}, (table) => [
+  index('messages_to_agent_idx').on(table.toAgentId),
+  index('messages_swarm_idx').on(table.swarmId),
 ]);
