@@ -37,6 +37,7 @@ interface GameState {
   links: Link[];
   fields: Field[];
   swarms: Swarm[];
+  agent_count: number;
 }
 
 interface UserLocation {
@@ -340,6 +341,7 @@ function App() {
 
       <footer className="footer">
         <div className="stats">
+          <span>Agents: <span className="count">{gameState?.agent_count || 0}</span></span>
           <span>Nodes: <span className="count">{gameState?.nodes.length || 0}</span></span>
           <span>Links: <span className="count">{gameState?.links.length || 0}</span></span>
           <span>Fields: <span className="count">{gameState?.fields.length || 0}</span></span>

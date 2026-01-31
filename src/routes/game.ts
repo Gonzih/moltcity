@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { db, schema } from '../db/index.js';
-import { eq, desc, and, gte, lte } from 'drizzle-orm';
+import { eq, desc, and, gte, lte, count } from 'drizzle-orm';
 import { authMiddleware } from '../middleware/auth.js';
 import { getTrustRole } from '../logic/trust.js';
 
@@ -34,12 +34,14 @@ router.get('/map/public', async (req, res) => {
 
   const nodeIds = new Set(nodes.map(n => n.id));
 
-  // Fetch links, fields, swarms
-  const [allLinks, allFields, swarms] = await Promise.all([
+  // Fetch links, fields, swarms, and agent count
+  const [allLinks, allFields, swarms, agentCountResult] = await Promise.all([
     db.query.links.findMany(),
     db.query.fields.findMany(),
     db.query.swarms.findMany(),
+    db.select({ count: count() }).from(schema.agents),
   ]);
+  const agentCount = agentCountResult[0]?.count || 0;
 
   // Filter links to only those where both nodes are visible
   const links = bounds
@@ -77,6 +79,7 @@ router.get('/map/public', async (req, res) => {
       name: s.name,
       color: s.color,
     })),
+    agent_count: agentCount,
   });
 });
 
