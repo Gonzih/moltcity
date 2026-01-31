@@ -7,10 +7,10 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "dev:client": "vite",
-    "build": "tsc && vite build && drizzle-kit push",
+    "build": "tsc && vite build",
     "build:server": "tsc",
     "build:client": "vite build",
-    "start": "node dist/index.js",
+    "start": "drizzle-kit push && node dist/index.js",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
@@ -33,7 +33,8 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-leaflet": "^5.0.0",
-    "redis": "^5.10.0"
+    "redis": "^5.10.0",
+    "drizzle-kit": "^0.31.8"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
@@ -43,7 +44,6 @@
     "@types/react": "^19.2.10",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.2",
-    "drizzle-kit": "^0.31.8",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vite": "^7.3.1"
