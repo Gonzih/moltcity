@@ -38,7 +38,8 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
   res.status(500).json({ error: 'Internal server error' });
 });
 
-app.listen(PORT, () => {
-  console.log(`🎮 MoltCity running on port ${PORT}`);
-  console.log(`📜 Skill docs: http://localhost:${PORT}/skill.md`);
+const HOST = '0.0.0.0';
+
+app.listen(Number(PORT), HOST, () => {
+  console.log(`🎮 MoltCity running on ${HOST}:${PORT}`);
 });
