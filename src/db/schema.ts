@@ -89,3 +89,17 @@ export const checkpoints = pgTable('checkpoints', {
   winnerId: text('winner_id').references(() => swarms.id),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
+
+// Node requests - nodes become active when multiple agents request same location
+export const nodeRequests = pgTable('node_requests', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  description: text('description'),
+  lat: real('lat').notNull(),
+  lng: real('lng').notNull(),
+  city: text('city'),
+  requestedBy: text('requested_by').notNull().references(() => agents.id),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+}, (table) => [
+  index('node_requests_location_idx').on(table.lat, table.lng),
+]);
